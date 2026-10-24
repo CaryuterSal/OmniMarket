@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { seedInitialData } from "@/lib/seed-data";
-import {
-  calculateAverageTicket,
-  calculateProfitMargin,
-} from "@/lib/analytics-utils";
+import { getFastAnalyticsPage } from "@/lib/analytics-cache";
 
 export const dynamic = "force-dynamic";
 
@@ -21,78 +17,34 @@ export async function GET(request: NextRequest) {
       Number.isNaN(limitParam) || limitParam < 1
         ? 50
         : Math.min(limitParam, 200);
-    const skip = (page - 1) * limit;
 
-    let total = await prisma.order.count();
-    if (total === 0) {
+    let result = await getFastAnalyticsPage(page, limit);
+
+    if (result.total === 0) {
       await seedInitialData(true);
-      total = await prisma.order.count();
+      result = await getFastAnalyticsPage(page, limit);
     }
 
-    const [ordersPaginated, allOrdersSummary] = await Promise.all([
-      prisma.order.findMany({
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.order.findMany({
-        select: {
-          totalAmount: true,
-          costAmount: true,
-          status: true,
-        },
-      }),
-    ]);
-
-    const totalRevenue = Number(
-      allOrdersSummary
-        .reduce((acc, o) => acc + o.totalAmount, 0)
-        .toFixed(2)
-    );
-    const totalCost = Number(
-      allOrdersSummary
-        .reduce((acc, o) => acc + o.costAmount, 0)
-        .toFixed(2)
-    );
-
-    const averageTicket = calculateAverageTicket(allOrdersSummary);
-    const profitMargin = calculateProfitMargin(totalRevenue, totalCost);
-
-    const ordersByStatus: Record<string, number> = {
-      PENDING: 0,
-      PROCESSING: 0,
-      SHIPPED: 0,
-      DELIVERED: 0,
-    };
-
-    for (const order of allOrdersSummary) {
-      ordersByStatus[order.status] = (ordersByStatus[order.status] || 0) + 1;
-    }
-
-    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const totalPages = Math.max(1, Math.ceil(result.total / limit));
     const latencyMs = Number((performance.now() - startTime).toFixed(2));
 
     return NextResponse.json(
       {
-        data: ordersPaginated,
+        data: result.data,
         meta: {
           page,
           limit,
-          total,
+          total: result.total,
           totalPages,
           latencyMs,
         },
-        metrics: {
-          totalRevenue,
-          averageTicket,
-          profitMargin,
-          ordersByStatus,
-        },
+        metrics: result.metrics,
       },
       {
         status: 200,
         headers: {
           "X-Response-Time": `${latencyMs}ms`,
+          "X-Cache-Status": result.fromCache ? "HIT" : "MISS",
         },
       }
     );

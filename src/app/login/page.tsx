@@ -2,14 +2,9 @@
 
 import React from "react";
 import { signIn } from "next-auth/react";
-import { Store, Github, Chrome, ArrowRight } from "lucide-react";
+import { Store, Github, Chrome, ShieldCheck } from "lucide-react";
 
 export default function LoginPage() {
-  function handleQuickDemoAccess() {
-    document.cookie = "x-e2e-test-auth=true; path=/; max-age=86400";
-    window.location.href = "/dashboard";
-  }
-
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#F8FAFC] px-4 text-slate-900">
       <div className="w-full max-w-[420px] rounded-3xl border border-slate-200/90 bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:p-10">
@@ -21,7 +16,7 @@ export default function LoginPage() {
             Bienvenido a OmniMarket
           </h1>
           <p className="mt-2 text-sm text-slate-500">
-            Inicia sesión para gestionar tus ventas, envíos e inventario.
+            Inicia sesión con OAuth 2.0 para gestionar tus ventas, envíos e inventario.
           </p>
         </div>
 
@@ -47,21 +42,10 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <div className="my-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-slate-200" />
-          <span className="text-xs font-medium text-slate-400">o bien</span>
-          <div className="h-px flex-1 bg-slate-200" />
+        <div className="mt-6 flex items-center justify-center gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-xs text-slate-500">
+          <ShieldCheck className="h-4 w-4 shrink-0 text-indigo-600" />
+          <span>Autenticación exclusiva OAuth 2.0 protegida con NextAuth.js</span>
         </div>
-
-        <button
-          type="button"
-          data-testid="demo-bypass-login-btn"
-          onClick={handleQuickDemoAccess}
-          className="flex w-full items-center justify-center gap-2 rounded-full bg-indigo-50 px-5 py-3 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100"
-        >
-          Explorar tienda de demostración
-          <ArrowRight className="h-4 w-4" />
-        </button>
       </div>
 
       <p className="mt-6 text-xs text-slate-400">

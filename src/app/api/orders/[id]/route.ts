@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { OrderStatusEnum } from "@/lib/analytics-utils";
+import { invalidateAnalyticsCache } from "@/lib/analytics-cache";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,8 @@ export async function PATCH(
       },
     });
 
+    invalidateAnalyticsCache();
+
     return NextResponse.json({ data: updated }, { status: 200 });
   } catch (error) {
     console.error("Error updating order status:", error);
@@ -44,6 +47,7 @@ export async function DELETE(
   try {
     const { id } = params;
     await prisma.order.delete({ where: { id } });
+    invalidateAnalyticsCache();
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (error) {
     console.error("Error deleting order:", error);

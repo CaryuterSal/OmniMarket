@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { OrderInputSchema } from "@/lib/analytics-utils";
+import { invalidateAnalyticsCache, primeAnalyticsCache } from "@/lib/analytics-cache";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,7 @@ export async function GET() {
     const orders = await prisma.order.findMany({
       orderBy: { createdAt: "desc" },
     });
+    primeAnalyticsCache(orders);
     return NextResponse.json({ data: orders }, { status: 200 });
   } catch (error) {
     console.error("Error fetching orders:", error);
@@ -47,6 +49,8 @@ export async function POST(request: NextRequest) {
     const created = await prisma.order.create({
       data: parsed.data,
     });
+
+    invalidateAnalyticsCache();
 
     return NextResponse.json({ data: created }, { status: 201 });
   } catch (error) {

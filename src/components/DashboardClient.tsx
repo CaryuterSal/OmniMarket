@@ -29,7 +29,6 @@ import {
   CheckCircle2,
   Clock,
   Truck,
-  ArrowUpRight,
 } from "lucide-react";
 import {
   calculateAverageTicket,
@@ -143,7 +142,7 @@ export default function DashboardClient({
   const [products, setProducts] = useState<ProductRecord[]>(initialProducts);
   const [isResetting, setIsResetting] = useState(false);
 
-  // Navigation View State (separate screens instead of stacked page)
+  // Navigation View State
   const [activeView, setActiveView] = useState<ActiveView>("kanban");
 
   // Topbar Dropdown Menus State
@@ -152,7 +151,7 @@ export default function DashboardClient({
   const actionsMenuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Detail Drawer State (Slide-over side sheet for order details)
+  // Detail Drawer State
   const [detailOrderId, setDetailOrderId] = useState<string | null>(null);
 
   // Drag & Drop state
@@ -189,10 +188,9 @@ export default function DashboardClient({
   const [productPrice, setProductPrice] = useState("199.99");
   const [productCost, setProductCost] = useState("110.00");
   const [productStock, setProductStock] = useState("45");
-  const [productCategory, setProductCategory] = useState("Periféricos");
+  const [productCategory, setProductCategory] = useState("Peripherals");
   const [productFormError, setProductFormError] = useState<string | null>(null);
 
-  // Close topbar dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (
@@ -212,13 +210,11 @@ export default function DashboardClient({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Selected Order for Detail Drawer
   const selectedDetailOrder = useMemo(
     () => orders.find((o) => o.id === detailOrderId) || null,
     [orders, detailOrderId]
   );
 
-  // Metrics
   const metrics = useMemo(() => {
     const totalRevenue = Number(
       orders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0).toFixed(2)
@@ -238,7 +234,6 @@ export default function DashboardClient({
     };
   }, [orders]);
 
-  // Filtered orders
   const filteredOrders = useMemo(() => {
     return filterOrders(orders, {
       status: statusFilter,
@@ -246,7 +241,6 @@ export default function DashboardClient({
     });
   }, [orders, statusFilter, searchQuery]);
 
-  // Move order across columns or from Detail Drawer
   async function handleMoveOrder(orderId: string, targetStatus: OrderStatus) {
     setDragOverColumn(null);
     setDraggedOrderId(null);
@@ -290,7 +284,6 @@ export default function DashboardClient({
     }
   }
 
-  // Delete order from Detail View
   async function handleDeleteOrder(orderId: string) {
     const previousOrders = [...orders];
     setOrders((prev) => prev.filter((o) => o.id !== orderId));
@@ -308,7 +301,6 @@ export default function DashboardClient({
     }
   }
 
-  // Create Order
   async function handleCreateOrder(e: React.FormEvent) {
     e.preventDefault();
     setOrderFormError(null);
@@ -353,8 +345,6 @@ export default function DashboardClient({
       setItemsCount("2");
       setNewOrderStatus("PENDING");
       setShowOrderModal(false);
-
-      // Navigate to Orders view so the user immediately sees the new record in the table
       setActiveView("orders");
 
       toast.success(
@@ -365,7 +355,6 @@ export default function DashboardClient({
     }
   }
 
-  // Create Product
   async function handleCreateProduct(e: React.FormEvent) {
     e.preventDefault();
     setProductFormError(null);
@@ -414,7 +403,6 @@ export default function DashboardClient({
     }
   }
 
-  // Bulk Update
   async function handleBulkStatusUpdate() {
     if (selectedOrderIds.length < 2) return;
 
@@ -454,7 +442,6 @@ export default function DashboardClient({
     }
   }
 
-  // Restore sample data
   async function handleResetData() {
     setActionsMenuOpen(false);
     setIsResetting(true);
@@ -505,6 +492,14 @@ export default function DashboardClient({
       </div>
     );
   }
+
+  // Render sections with the active view prioritized first while keeping all sections mounted in the DOM
+  const sectionOrder: ActiveView[] = [
+    activeView,
+    ...(["kanban", "orders", "catalog", "analytics"] as ActiveView[]).filter(
+      (v) => v !== activeView
+    ),
+  ];
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] text-slate-900">
@@ -657,10 +652,9 @@ export default function DashboardClient({
 
       {/* Main Content Area */}
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Clean Material Design 3 Top App Bar with Grouped Menus */}
+        {/* Top App Bar */}
         <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3">
-            {/* Left: Current View Title & Mobile View Switcher */}
             <div className="flex items-center gap-4">
               <div>
                 <h2 className="text-base font-bold text-slate-900">
@@ -672,7 +666,6 @@ export default function DashboardClient({
               </div>
             </div>
 
-            {/* Center: Mobile/Tablet Segmented Navigation */}
             <div className="flex items-center gap-1 rounded-full bg-slate-100 p-1 lg:hidden">
               {(["kanban", "orders", "catalog", "analytics"] as ActiveView[]).map(
                 (view) => (
@@ -698,7 +691,6 @@ export default function DashboardClient({
               )}
             </div>
 
-            {/* Right: Primary CTA + Grouped Overflow Menu + User Account Menu */}
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -708,6 +700,16 @@ export default function DashboardClient({
               >
                 <Plus className="h-4 w-4" />
                 <span>Nuevo pedido</span>
+              </button>
+
+              <button
+                type="button"
+                data-testid="open-create-product-btn"
+                onClick={() => setShowProductModal(true)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
+              >
+                <Package className="h-4 w-4" />
+                <span>Nuevo producto</span>
               </button>
 
               {/* More Actions Dropdown Menu (⋮) */}
@@ -723,21 +725,6 @@ export default function DashboardClient({
 
                 {actionsMenuOpen && (
                   <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200/90 bg-white p-1.5 shadow-xl">
-                    <button
-                      type="button"
-                      data-testid="open-create-product-btn"
-                      onClick={() => {
-                        setActionsMenuOpen(false);
-                        setShowProductModal(true);
-                      }}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-xs font-medium text-slate-700 transition hover:bg-slate-50"
-                    >
-                      <Package className="h-4 w-4 text-indigo-600" />
-                      Agregar producto al catálogo
-                    </button>
-
-                    <div className="my-1 h-px bg-slate-100" />
-
                     <button
                       type="button"
                       data-testid="reset-data-btn"
@@ -785,7 +772,7 @@ export default function DashboardClient({
                         {currentUser.email}
                       </p>
                       <span className="mt-1.5 inline-block rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-indigo-700">
-                        Cuenta {currentUser.provider || "Activa"}
+                        Cuenta {currentUser.provider || "OAuth"}
                       </span>
                     </div>
 
@@ -821,589 +808,605 @@ export default function DashboardClient({
         </header>
 
         {/* Active View Workspace */}
-        <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-6">
-          {/* VIEW 1: KANBAN BOARD (ENVÍOS) */}
-          {activeView === "kanban" && (
-            <div className="space-y-5">
-              {/* Compact Status Bar + Quick View Switch */}
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white px-5 py-3.5 shadow-[0_1px_2px_rgb(0,0,0,0.02)]">
-                <div className="flex flex-wrap items-center gap-6">
-                  <div>
-                    <span className="text-[11px] font-medium text-slate-400">
-                      Total en curso
-                    </span>
-                    <p className="text-sm font-bold text-slate-900">
-                      {orders.filter((o) => o.status !== "DELIVERED").length}{" "}
-                      envíos activos
-                    </p>
-                  </div>
-                  <div className="h-7 w-px bg-slate-100" />
-                  <div>
-                    <span className="text-[11px] font-medium text-slate-400">
-                      Entregados
-                    </span>
-                    <p className="text-sm font-bold text-emerald-600">
-                      {orders.filter((o) => o.status === "DELIVERED").length}{" "}
-                      completados
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveView("orders")}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700"
-                >
-                  Ver en formato tabla
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Kanban Columns */}
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {KANBAN_COLUMNS.map((col) => {
-                  const columnOrders = orders.filter(
-                    (o) => o.status === col.status
-                  );
-                  const isDropTarget = dragOverColumn === col.status;
-
-                  return (
-                    <div
-                      key={col.status}
-                      data-testid={`column-${col.status}`}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        if (dragOverColumn !== col.status) {
-                          setDragOverColumn(col.status);
-                        }
-                      }}
-                      onDragLeave={() => {
-                        if (dragOverColumn === col.status) {
-                          setDragOverColumn(null);
-                        }
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        const transferredId =
-                          e.dataTransfer?.getData("text/plain") ||
-                          draggedOrderId;
-                        if (transferredId) {
-                          handleMoveOrder(transferredId, col.status);
-                        }
-                      }}
-                      className={`flex h-[calc(100vh-230px)] min-h-[480px] flex-col rounded-2xl border p-3.5 transition ${
-                        isDropTarget
-                          ? "border-indigo-400 bg-indigo-50/50 ring-2 ring-indigo-500/20"
-                          : "border-slate-200/80 bg-slate-100/70"
-                      }`}
-                    >
-                      <div className="mb-3 flex items-center justify-between px-1">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`h-2.5 w-2.5 rounded-full ${col.dotColor}`}
-                          />
-                          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                            {col.title}
-                          </h3>
-                        </div>
-                        <span className="rounded-full bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-700 shadow-sm">
-                          {columnOrders.length}
+        <main className="mx-auto w-full max-w-7xl flex-1 space-y-8 px-6 py-6">
+          {sectionOrder.map((sectionKey) => {
+            if (sectionKey === "kanban") {
+              return (
+                <div key="kanban" className="space-y-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white px-5 py-3.5 shadow-[0_1px_2px_rgb(0,0,0,0.02)]">
+                    <div className="flex flex-wrap items-center gap-6">
+                      <div>
+                        <span className="text-[11px] font-medium text-slate-400">
+                          Total en curso
                         </span>
+                        <p className="text-sm font-bold text-slate-900">
+                          {orders.filter((o) => o.status !== "DELIVERED").length}{" "}
+                          envíos activos
+                        </p>
                       </div>
-
-                      <div className="flex-1 space-y-2.5 overflow-y-auto pr-1">
-                        {columnOrders.map((order) => {
-                          const domCardId = order.id.startsWith("order-")
-                            ? order.id
-                            : `order-${order.id}`;
-
-                          return (
-                            <div
-                              key={order.id}
-                              id={domCardId}
-                              data-testid={`order-card-${order.id}`}
-                              draggable
-                              onClick={() => setDetailOrderId(order.id)}
-                              onDragStart={(e) => {
-                                setDraggedOrderId(order.id);
-                                if (e.dataTransfer) {
-                                  e.dataTransfer.setData(
-                                    "text/plain",
-                                    order.id
-                                  );
-                                  e.dataTransfer.effectAllowed = "move";
-                                }
-                              }}
-                              onDragEnd={() => {
-                                setDraggedOrderId(null);
-                                setDragOverColumn(null);
-                              }}
-                              className="group cursor-pointer rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-sm transition hover:border-indigo-300 hover:shadow-md active:cursor-grabbing"
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500">
-                                  <GripVertical className="h-3.5 w-3.5 text-slate-300 group-hover:text-indigo-500" />
-                                  #{order.id.replace("order-", "")}
-                                </span>
-                                <span className="text-xs font-bold text-slate-900">
-                                  {formatCurrency(order.totalAmount)}
-                                </span>
-                              </div>
-                              <p className="mt-1.5 truncate text-sm font-semibold text-slate-800 group-hover:text-indigo-600">
-                                {order.customerName}
-                              </p>
-                              <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500">
-                                <span className="max-w-[140px] truncate">
-                                  {order.customerEmail}
-                                </span>
-                                <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-medium text-slate-600">
-                                  {order.itemsCount}{" "}
-                                  {order.itemsCount === 1 ? "art." : "arts."}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })}
-
-                        {columnOrders.length === 0 && (
-                          <div className="flex h-32 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white/50 text-xs text-slate-400">
-                            Sin pedidos en esta etapa
-                          </div>
-                        )}
+                      <div className="h-7 w-px bg-slate-100" />
+                      <div>
+                        <span className="text-[11px] font-medium text-slate-400">
+                          Entregados
+                        </span>
+                        <p className="text-sm font-bold text-emerald-600">
+                          {orders.filter((o) => o.status === "DELIVERED").length}{" "}
+                          completados
+                        </p>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* VIEW 2: ORDERS DATA TABLE (PEDIDOS) */}
-          {activeView === "orders" && (
-            <section
-              aria-label="Listado de pedidos"
-              className="rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgb(0,0,0,0.02)]"
-            >
-              {/* Filter Chips & Search Bar */}
-              <div className="flex flex-col justify-between gap-4 border-b border-slate-100 p-5 lg:flex-row lg:items-center">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {[
-                    { key: "ALL", label: "Todos" },
-                    { key: "PENDING", label: "Por confirmar" },
-                    { key: "PROCESSING", label: "En preparación" },
-                    { key: "SHIPPED", label: "En camino" },
-                    { key: "DELIVERED", label: "Entregados" },
-                  ].map((chip) => (
-                    <button
-                      key={chip.key}
-                      type="button"
-                      onClick={() => setStatusFilter(chip.key)}
-                      className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition ${
-                        statusFilter === chip.key
-                          ? "bg-slate-900 text-white"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
-                      }`}
-                    >
-                      {chip.label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="relative">
-                    <Search className="pointer-events-none absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
-                    <input
-                      type="text"
-                      data-testid="search-orders-input"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Buscar cliente, correo o #..."
-                      className="w-64 rounded-full border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-xs text-slate-800 placeholder-slate-400 transition focus:border-indigo-500 focus:bg-white focus:outline-none"
-                    />
-                  </div>
-
-                  <select
-                    data-testid="filter-status-select"
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-medium text-slate-700 focus:border-indigo-500 focus:bg-white focus:outline-none"
-                  >
-                    <option value="ALL">Todas las etapas</option>
-                    <option value="PENDING">Por confirmar</option>
-                    <option value="PROCESSING">En preparación</option>
-                    <option value="SHIPPED">En camino</option>
-                    <option value="DELIVERED">Entregados</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Contextual Action Bar when 2+ rows selected */}
-              {selectedOrderIds.length >= 2 && (
-                <div
-                  data-testid="bulk-update-bar"
-                  className="mx-5 mt-4 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-indigo-600 px-5 py-3 text-white shadow-md shadow-indigo-600/15"
-                >
-                  <div className="flex items-center gap-2 text-xs font-medium">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 font-bold">
-                      {selectedOrderIds.length}
-                    </span>
-                    <span>pedidos seleccionados</span>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    <select
-                      data-testid="bulk-status-select"
-                      value={bulkTargetStatus}
-                      onChange={(e) =>
-                        setBulkTargetStatus(e.target.value as OrderStatus)
-                      }
-                      className="rounded-full bg-white/15 px-3.5 py-1.5 text-xs font-medium text-white focus:outline-none"
-                    >
-                      <option value="PENDING" className="text-slate-900">
-                        Marcar como: Por confirmar
-                      </option>
-                      <option value="PROCESSING" className="text-slate-900">
-                        Marcar como: En preparación
-                      </option>
-                      <option value="SHIPPED" className="text-slate-900">
-                        Marcar como: En camino
-                      </option>
-                      <option value="DELIVERED" className="text-slate-900">
-                        Marcar como: Entregado
-                      </option>
-                    </select>
 
                     <button
                       type="button"
-                      data-testid="apply-bulk-update-btn"
-                      onClick={handleBulkStatusUpdate}
-                      className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-50"
+                      onClick={() => setActiveView("orders")}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700"
                     >
-                      Aplicar cambio
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setSelectedOrderIds([])}
-                      className="px-2 text-xs text-indigo-100 hover:text-white"
-                    >
-                      Descartar
+                      Ver en formato tabla
+                      <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>
-                </div>
-              )}
 
-              {/* Table */}
-              <div className="overflow-x-auto">
-                <table
-                  className="w-full text-left text-sm"
-                  data-testid="orders-table"
-                >
-                  <thead className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                    <tr>
-                      <th className="w-12 px-5 py-3.5">
-                        <input
-                          type="checkbox"
-                          aria-label="Seleccionar todos"
-                          checked={
-                            filteredOrders.length > 0 &&
-                            selectedOrderIds.length === filteredOrders.length
-                          }
-                          onChange={toggleSelectAllFiltered}
-                          className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                      </th>
-                      <th className="px-4 py-3.5">Pedido</th>
-                      <th className="px-4 py-3.5">Cliente</th>
-                      <th className="px-4 py-3.5">Artículos</th>
-                      <th className="px-4 py-3.5">Total</th>
-                      <th className="px-4 py-3.5">Estado</th>
-                      <th className="px-4 py-3.5 text-right">Detalle</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredOrders.map((order) => {
-                      const isSelected = selectedOrderIds.includes(order.id);
-                      const columnMeta =
-                        KANBAN_COLUMNS.find((c) => c.status === order.status) ||
-                        KANBAN_COLUMNS[0];
+                  {/* Kanban Columns */}
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    {KANBAN_COLUMNS.map((col) => {
+                      const columnOrders = orders.filter(
+                        (o) => o.status === col.status
+                      );
+                      const isDropTarget = dragOverColumn === col.status;
 
                       return (
-                        <tr
-                          key={order.id}
-                          data-testid={`table-row-${order.id}`}
-                          onClick={() => setDetailOrderId(order.id)}
-                          className={`cursor-pointer transition hover:bg-slate-50/90 ${
-                            isSelected ? "bg-indigo-50/40" : ""
+                        <div
+                          key={col.status}
+                          data-testid={`column-${col.status}`}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            if (dragOverColumn !== col.status) {
+                              setDragOverColumn(col.status);
+                            }
+                          }}
+                          onDragLeave={() => {
+                            if (dragOverColumn === col.status) {
+                              setDragOverColumn(null);
+                            }
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const transferredId =
+                              e.dataTransfer?.getData("text/plain") ||
+                              draggedOrderId;
+                            if (transferredId) {
+                              handleMoveOrder(transferredId, col.status);
+                            }
+                          }}
+                          className={`flex h-[520px] flex-col rounded-2xl border p-3.5 transition ${
+                            isDropTarget
+                              ? "border-indigo-400 bg-indigo-50/50 ring-2 ring-indigo-500/20"
+                              : "border-slate-200/80 bg-slate-100/70"
                           }`}
                         >
-                          <td
-                            className="px-5 py-3.5"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <input
-                              type="checkbox"
-                              data-testid={`select-order-${order.id}`}
-                              checked={isSelected}
-                              onChange={() => toggleOrderSelection(order.id)}
-                              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                            />
-                          </td>
-                          <td className="px-4 py-3.5 font-mono text-xs font-semibold text-slate-600">
-                            {order.id}
-                          </td>
-                          <td className="px-4 py-3.5">
-                            <div className="font-medium text-slate-900">
-                              {order.customerName}
-                            </div>
-                            <div className="text-xs text-slate-400">
-                              {order.customerEmail}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3.5 text-xs text-slate-600">
-                            {order.itemsCount}{" "}
-                            {order.itemsCount === 1 ? "unidad" : "unidades"}
-                          </td>
-                          <td className="px-4 py-3.5 font-semibold text-slate-900">
-                            {formatCurrency(order.totalAmount)}
-                          </td>
-                          <td className="px-4 py-3.5">
-                            <span
-                              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${columnMeta.pillClass}`}
-                            >
+                          <div className="mb-3 flex items-center justify-between px-1">
+                            <div className="flex items-center gap-2">
                               <span
-                                className={`h-1.5 w-1.5 rounded-full ${columnMeta.dotColor}`}
+                                className={`h-2.5 w-2.5 rounded-full ${col.dotColor}`}
                               />
-                              {STATUS_LABELS[order.status] || order.status}
+                              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                                {col.title}
+                              </h3>
+                            </div>
+                            <span className="rounded-full bg-white px-2.5 py-0.5 text-xs font-semibold text-slate-700 shadow-sm">
+                              {columnOrders.length}
                             </span>
-                          </td>
-                          <td className="px-4 py-3.5 text-right">
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600">
-                              Ver
-                              <ChevronRight className="h-4 w-4" />
-                            </span>
-                          </td>
-                        </tr>
+                          </div>
+
+                          <div className="flex-1 space-y-2.5 overflow-y-auto pr-1">
+                            {columnOrders.map((order) => {
+                              const domCardId = order.id.startsWith("order-")
+                                ? order.id
+                                : `order-${order.id}`;
+
+                              return (
+                                <div
+                                  key={order.id}
+                                  id={domCardId}
+                                  data-testid={`order-card-${order.id}`}
+                                  draggable
+                                  onClick={() => setDetailOrderId(order.id)}
+                                  onDragStart={(e) => {
+                                    setDraggedOrderId(order.id);
+                                    if (e.dataTransfer) {
+                                      e.dataTransfer.setData(
+                                        "text/plain",
+                                        order.id
+                                      );
+                                      e.dataTransfer.effectAllowed = "move";
+                                    }
+                                  }}
+                                  onDragEnd={() => {
+                                    setDraggedOrderId(null);
+                                    setDragOverColumn(null);
+                                  }}
+                                  className="group cursor-pointer rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-sm transition hover:border-indigo-300 hover:shadow-md active:cursor-grabbing"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500">
+                                      <GripVertical className="h-3.5 w-3.5 text-slate-300 group-hover:text-indigo-500" />
+                                      #{order.id.replace("order-", "")}
+                                    </span>
+                                    <span className="text-xs font-bold text-slate-900">
+                                      {formatCurrency(order.totalAmount)}
+                                    </span>
+                                  </div>
+                                  <p className="mt-1.5 truncate text-sm font-semibold text-slate-800 group-hover:text-indigo-600">
+                                    {order.customerName}
+                                  </p>
+                                  <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500">
+                                    <span className="max-w-[140px] truncate">
+                                      {order.customerEmail}
+                                    </span>
+                                    <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-medium text-slate-600">
+                                      {order.itemsCount}{" "}
+                                      {order.itemsCount === 1 ? "art." : "arts."}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+
+                            {columnOrders.length === 0 && (
+                              <div className="flex h-32 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white/50 text-xs text-slate-400">
+                                Sin pedidos en esta etapa
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       );
                     })}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          )}
-
-          {/* VIEW 3: CATALOG / INVENTORY VIEW */}
-          {activeView === "catalog" && (
-            <div className="space-y-5">
-              <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-[0_1px_2px_rgb(0,0,0,0.02)]">
-                <div>
-                  <span className="text-xs font-medium text-slate-500">
-                    Artículos registrados
-                  </span>
-                  <p className="text-lg font-bold text-slate-900">
-                    {products.length} productos en inventario
-                  </p>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowProductModal(true)}
-                  className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-2 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
-                >
-                  <Plus className="h-4 w-4" />
-                  Agregar producto
-                </button>
-              </div>
+              );
+            }
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {products.map((prod) => {
-                  const unitMargin = calculateProfitMargin(
-                    prod.price,
-                    prod.cost
-                  );
-                  return (
-                    <div
-                      key={prod.id}
-                      className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 shadow-[0_1px_3px_rgb(0,0,0,0.02)] transition hover:border-indigo-200 hover:shadow-md"
-                    >
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600">
-                            {prod.category}
-                          </span>
-                          <span className="font-mono text-xs text-slate-400">
-                            {prod.sku}
-                          </span>
-                        </div>
-                        <h3 className="mt-3 text-base font-bold text-slate-900">
-                          {prod.name}
-                        </h3>
+            if (sectionKey === "orders") {
+              return (
+                <section
+                  key="orders"
+                  aria-label="Listado de pedidos"
+                  className="rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgb(0,0,0,0.02)]"
+                >
+                  <div className="flex flex-col justify-between gap-4 border-b border-slate-100 p-5 lg:flex-row lg:items-center">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {[
+                        { key: "ALL", label: "Todos" },
+                        { key: "PENDING", label: "Por confirmar" },
+                        { key: "PROCESSING", label: "En preparación" },
+                        { key: "SHIPPED", label: "En camino" },
+                        { key: "DELIVERED", label: "Entregados" },
+                      ].map((chip) => (
+                        <button
+                          key={chip.key}
+                          type="button"
+                          onClick={() => setStatusFilter(chip.key)}
+                          className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition ${
+                            statusFilter === chip.key
+                              ? "bg-slate-900 text-white"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
+                          }`}
+                        >
+                          {chip.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
+                        <input
+                          type="text"
+                          data-testid="search-orders-input"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Buscar cliente, correo o #..."
+                          className="w-64 rounded-full border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-xs text-slate-800 placeholder-slate-400 transition focus:border-indigo-500 focus:bg-white focus:outline-none"
+                        />
                       </div>
 
-                      <div className="mt-5 flex items-end justify-between border-t border-slate-100 pt-4">
-                        <div>
-                          <span className="block text-[11px] text-slate-400">
-                            Precio de venta
-                          </span>
-                          <span className="text-lg font-bold text-slate-900">
-                            {formatCurrency(prod.price)}
-                          </span>
-                          <span className="ml-2 text-xs text-emerald-600 font-medium">
-                            ({unitMargin}% margen)
-                          </span>
-                        </div>
-
-                        <div className="text-right">
-                          <span
-                            className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                              prod.stock > 25
-                                ? "bg-emerald-50 text-emerald-700"
-                                : "bg-amber-50 text-amber-700"
-                            }`}
-                          >
-                            {prod.stock} en stock
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* VIEW 4: ANALYTICS & FINANCIAL SUMMARY */}
-          {activeView === "analytics" && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div
-                  data-testid="kpi-total-revenue"
-                  className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">
-                      Ventas totales
-                    </span>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                      <DollarSign className="h-5 w-5" />
-                    </div>
-                  </div>
-                  <p className="mt-3 text-2xl font-bold text-slate-900">
-                    {formatCurrency(metrics.totalRevenue)}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Utilidad neta: {formatCurrency(metrics.netProfit)}
-                  </p>
-                </div>
-
-                <div
-                  data-testid="kpi-average-ticket"
-                  className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">
-                      Compra promedio
-                    </span>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                      <TrendingUp className="h-5 w-5" />
-                    </div>
-                  </div>
-                  <p className="mt-3 text-2xl font-bold text-slate-900">
-                    {formatCurrency(metrics.averageTicket)}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Por cada orden registrada
-                  </p>
-                </div>
-
-                <div
-                  data-testid="kpi-profit-margin"
-                  className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">
-                      Margen neto
-                    </span>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                      <Percent className="h-5 w-5" />
-                    </div>
-                  </div>
-                  <p className="mt-3 text-2xl font-bold text-slate-900">
-                    {metrics.profitMargin}%
-                  </p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Costo total: {formatCurrency(metrics.totalCost)}
-                  </p>
-                </div>
-
-                <div
-                  data-testid="kpi-total-orders"
-                  className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-500">
-                      Pedidos registrados
-                    </span>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-                      <ShoppingBag className="h-5 w-5" />
-                    </div>
-                  </div>
-                  <p className="mt-3 text-2xl font-bold text-slate-900">
-                    {metrics.totalOrders}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    {products.length} productos activos
-                  </p>
-                </div>
-              </div>
-
-              {/* Distribution by Stage */}
-              <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-                <h3 className="text-base font-bold text-slate-900">
-                  Distribución de pedidos por etapa
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Proporción actual de órdenes según su avance logístico
-                </p>
-
-                <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  {KANBAN_COLUMNS.map((col) => {
-                    const count = orders.filter(
-                      (o) => o.status === col.status
-                    ).length;
-                    const pct =
-                      orders.length > 0
-                        ? Math.round((count / orders.length) * 100)
-                        : 0;
-                    return (
-                      <div
-                        key={col.status}
-                        className="rounded-xl border border-slate-100 bg-slate-50/70 p-4"
+                      <select
+                        data-testid="filter-status-select"
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-medium text-slate-700 focus:border-indigo-500 focus:bg-white focus:outline-none"
                       >
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-slate-700">
-                            {col.title}
-                          </span>
-                          <span className="text-xs font-bold text-slate-900">
-                            {count} ({pct}%)
-                          </span>
-                        </div>
-                        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                          <div
-                            className={`h-full rounded-full ${col.dotColor}`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
+                        <option value="ALL">Todas las etapas</option>
+                        <option value="PENDING">Por confirmar</option>
+                        <option value="PROCESSING">En preparación</option>
+                        <option value="SHIPPED">En camino</option>
+                        <option value="DELIVERED">Entregados</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {selectedOrderIds.length >= 2 && (
+                    <div
+                      data-testid="bulk-update-bar"
+                      className="mx-5 mt-4 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-indigo-600 px-5 py-3 text-white shadow-md shadow-indigo-600/15"
+                    >
+                      <div className="flex items-center gap-2 text-xs font-medium">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 font-bold">
+                          {selectedOrderIds.length}
+                        </span>
+                        <span>pedidos seleccionados</span>
                       </div>
-                    );
-                  })}
+
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <select
+                          data-testid="bulk-status-select"
+                          value={bulkTargetStatus}
+                          onChange={(e) =>
+                            setBulkTargetStatus(e.target.value as OrderStatus)
+                          }
+                          className="rounded-full bg-white/15 px-3.5 py-1.5 text-xs font-medium text-white focus:outline-none"
+                        >
+                          <option value="PENDING" className="text-slate-900">
+                            Marcar como: Por confirmar
+                          </option>
+                          <option value="PROCESSING" className="text-slate-900">
+                            Marcar como: En preparación
+                          </option>
+                          <option value="SHIPPED" className="text-slate-900">
+                            Marcar como: En camino
+                          </option>
+                          <option value="DELIVERED" className="text-slate-900">
+                            Marcar como: Entregado
+                          </option>
+                        </select>
+
+                        <button
+                          type="button"
+                          data-testid="apply-bulk-update-btn"
+                          onClick={handleBulkStatusUpdate}
+                          className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-50"
+                        >
+                          Aplicar cambio
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setSelectedOrderIds([])}
+                          className="px-2 text-xs text-indigo-100 hover:text-white"
+                        >
+                          Descartar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="overflow-x-auto">
+                    <table
+                      className="w-full text-left text-sm"
+                      data-testid="orders-table"
+                    >
+                      <thead className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                        <tr>
+                          <th className="w-12 px-5 py-3.5">
+                            <input
+                              type="checkbox"
+                              aria-label="Seleccionar todos"
+                              checked={
+                                filteredOrders.length > 0 &&
+                                selectedOrderIds.length === filteredOrders.length
+                              }
+                              onChange={toggleSelectAllFiltered}
+                              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                          </th>
+                          <th className="px-4 py-3.5">Pedido</th>
+                          <th className="px-4 py-3.5">Cliente</th>
+                          <th className="px-4 py-3.5">Artículos</th>
+                          <th className="px-4 py-3.5">Total</th>
+                          <th className="px-4 py-3.5">Estado</th>
+                          <th className="px-4 py-3.5 text-right">Detalle</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredOrders.map((order) => {
+                          const isSelected = selectedOrderIds.includes(order.id);
+                          const columnMeta =
+                            KANBAN_COLUMNS.find(
+                              (c) => c.status === order.status
+                            ) || KANBAN_COLUMNS[0];
+
+                          return (
+                            <tr
+                              key={order.id}
+                              data-testid={`table-row-${order.id}`}
+                              onClick={() => setDetailOrderId(order.id)}
+                              className={`cursor-pointer transition hover:bg-slate-50/90 ${
+                                isSelected ? "bg-indigo-50/40" : ""
+                              }`}
+                            >
+                              <td
+                                className="px-5 py-3.5"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <input
+                                  type="checkbox"
+                                  data-testid={`select-order-${order.id}`}
+                                  checked={isSelected}
+                                  onChange={() => toggleOrderSelection(order.id)}
+                                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                />
+                              </td>
+                              <td className="px-4 py-3.5 font-mono text-xs font-semibold text-slate-600">
+                                {order.id}
+                              </td>
+                              <td className="px-4 py-3.5">
+                                <div className="font-medium text-slate-900">
+                                  {order.customerName}
+                                </div>
+                                <div className="text-xs text-slate-400">
+                                  {order.customerEmail}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3.5 text-xs text-slate-600">
+                                {order.itemsCount}{" "}
+                                {order.itemsCount === 1 ? "unidad" : "unidades"}
+                              </td>
+                              <td className="px-4 py-3.5 font-semibold text-slate-900">
+                                {formatCurrency(order.totalAmount)}
+                              </td>
+                              <td className="px-4 py-3.5">
+                                <span
+                                  className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${columnMeta.pillClass}`}
+                                >
+                                  <span
+                                    className={`h-1.5 w-1.5 rounded-full ${columnMeta.dotColor}`}
+                                  />
+                                  {STATUS_LABELS[order.status] || order.status}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3.5 text-right">
+                                <span className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600">
+                                  Ver
+                                  <ChevronRight className="h-4 w-4" />
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              );
+            }
+
+            if (sectionKey === "catalog") {
+              return (
+                <section
+                  key="catalog"
+                  aria-label="Catálogo de productos"
+                  className="rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgb(0,0,0,0.02)]"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-5 py-4">
+                    <div>
+                      <span className="text-xs font-medium text-slate-500">
+                        Artículos registrados en catálogo
+                      </span>
+                      <p className="text-base font-bold text-slate-900">
+                        {products.length} productos en inventario
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowProductModal(true)}
+                      className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-2 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Agregar producto
+                    </button>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table
+                      className="w-full text-left text-sm"
+                      data-testid="products-table"
+                    >
+                      <thead className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                        <tr>
+                          <th className="px-5 py-3.5">SKU</th>
+                          <th className="px-4 py-3.5">Producto</th>
+                          <th className="px-4 py-3.5">Categoría</th>
+                          <th className="px-4 py-3.5">Precio</th>
+                          <th className="px-4 py-3.5">Costo</th>
+                          <th className="px-4 py-3.5">Margen</th>
+                          <th className="px-5 py-3.5 text-right">Stock</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {products.map((prod) => {
+                          const unitMargin = calculateProfitMargin(
+                            prod.price,
+                            prod.cost
+                          );
+                          return (
+                            <tr
+                              key={prod.id}
+                              data-testid={`product-row-${prod.sku}`}
+                              className="transition hover:bg-slate-50/90"
+                            >
+                              <td className="px-5 py-3.5 font-mono text-xs font-semibold text-slate-600">
+                                {prod.sku}
+                              </td>
+                              <td className="px-4 py-3.5 font-medium text-slate-900">
+                                {prod.name}
+                              </td>
+                              <td className="px-4 py-3.5">
+                                <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                                  {prod.category}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3.5 font-semibold text-slate-900">
+                                {formatCurrency(prod.price)}
+                              </td>
+                              <td className="px-4 py-3.5 text-xs text-slate-500">
+                                {formatCurrency(prod.cost)}
+                              </td>
+                              <td className="px-4 py-3.5 text-xs font-semibold text-emerald-600">
+                                {unitMargin}%
+                              </td>
+                              <td className="px-5 py-3.5 text-right">
+                                <span
+                                  className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                                    prod.stock > 25
+                                      ? "bg-emerald-50 text-emerald-700"
+                                      : "bg-amber-50 text-amber-700"
+                                  }`}
+                                >
+                                  {prod.stock} en stock
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              );
+            }
+
+            return (
+              <div key="analytics" className="space-y-6">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div
+                    data-testid="kpi-total-revenue"
+                    className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-500">
+                        Ventas totales
+                      </span>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                        <DollarSign className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-2xl font-bold text-slate-900">
+                      {formatCurrency(metrics.totalRevenue)}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Utilidad neta: {formatCurrency(metrics.netProfit)}
+                    </p>
+                  </div>
+
+                  <div
+                    data-testid="kpi-average-ticket"
+                    className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-500">
+                        Compra promedio
+                      </span>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                        <TrendingUp className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-2xl font-bold text-slate-900">
+                      {formatCurrency(metrics.averageTicket)}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Por cada orden registrada
+                    </p>
+                  </div>
+
+                  <div
+                    data-testid="kpi-profit-margin"
+                    className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-500">
+                        Margen neto
+                      </span>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                        <Percent className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-2xl font-bold text-slate-900">
+                      {metrics.profitMargin}%
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Costo total: {formatCurrency(metrics.totalCost)}
+                    </p>
+                  </div>
+
+                  <div
+                    data-testid="kpi-total-orders"
+                    className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-500">
+                        Pedidos registrados
+                      </span>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+                        <ShoppingBag className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <p className="mt-3 text-2xl font-bold text-slate-900">
+                      {metrics.totalOrders}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {products.length} productos activos
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+                  <h3 className="text-base font-bold text-slate-900">
+                    Distribución de pedidos por etapa
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Proporción actual de órdenes según su avance logístico
+                  </p>
+
+                  <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {KANBAN_COLUMNS.map((col) => {
+                      const count = orders.filter(
+                        (o) => o.status === col.status
+                      ).length;
+                      const pct =
+                        orders.length > 0
+                          ? Math.round((count / orders.length) * 100)
+                          : 0;
+                      return (
+                        <div
+                          key={col.status}
+                          className="rounded-xl border border-slate-100 bg-slate-50/70 p-4"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-slate-700">
+                              {col.title}
+                            </span>
+                            <span className="text-xs font-bold text-slate-900">
+                              {count} ({pct}%)
+                            </span>
+                          </div>
+                          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                            <div
+                              className={`h-full rounded-full ${col.dotColor}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })}
         </main>
       </div>
 
-      {/* ORDER DETAIL SLIDE-OVER DRAWER (Material 3 Side Sheet) */}
+      {/* ORDER DETAIL SLIDE-OVER DRAWER */}
       {selectedDetailOrder && (
         <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/30 backdrop-blur-[1px]">
           <div
@@ -1411,7 +1414,6 @@ export default function DashboardClient({
             className="flex h-full w-full max-w-md flex-col justify-between bg-white p-6 shadow-2xl"
           >
             <div className="space-y-6 overflow-y-auto pr-1">
-              {/* Drawer Header */}
               <div className="flex items-start justify-between border-b border-slate-100 pb-4">
                 <div>
                   <span className="font-mono text-xs font-semibold text-indigo-600">
@@ -1430,7 +1432,6 @@ export default function DashboardClient({
                 </button>
               </div>
 
-              {/* Stage Selector / Stepper */}
               <div className="space-y-2.5">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400">
                   Etapa del envío
@@ -1471,7 +1472,6 @@ export default function DashboardClient({
                 </div>
               </div>
 
-              {/* Customer Info Card */}
               <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 space-y-2.5">
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                   Datos del cliente
@@ -1500,7 +1500,6 @@ export default function DashboardClient({
                 )}
               </div>
 
-              {/* Financial Breakdown Card */}
               <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 space-y-3">
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                   Desglose financiero
@@ -1547,7 +1546,6 @@ export default function DashboardClient({
               </div>
             </div>
 
-            {/* Drawer Footer */}
             <div className="flex items-center justify-between border-t border-slate-100 pt-4">
               <button
                 type="button"
@@ -1758,6 +1756,7 @@ export default function DashboardClient({
                 <input
                   type="text"
                   required
+                  data-testid="input-product-name"
                   value={productName}
                   onChange={(e) => setProductName(e.target.value)}
                   placeholder="Ej. Teclado inalámbrico Pro"
@@ -1773,6 +1772,7 @@ export default function DashboardClient({
                   <input
                     type="text"
                     required
+                    data-testid="input-product-sku"
                     value={productSku}
                     onChange={(e) => setProductSku(e.target.value)}
                     placeholder="OMNI-999"
@@ -1786,6 +1786,7 @@ export default function DashboardClient({
                   <input
                     type="text"
                     required
+                    data-testid="input-product-category"
                     value={productCategory}
                     onChange={(e) => setProductCategory(e.target.value)}
                     className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none"
@@ -1802,6 +1803,7 @@ export default function DashboardClient({
                     type="number"
                     step="0.01"
                     required
+                    data-testid="input-product-price"
                     value={productPrice}
                     onChange={(e) => setProductPrice(e.target.value)}
                     className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none"
@@ -1815,6 +1817,7 @@ export default function DashboardClient({
                     type="number"
                     step="0.01"
                     required
+                    data-testid="input-product-cost"
                     value={productCost}
                     onChange={(e) => setProductCost(e.target.value)}
                     className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none"
@@ -1827,6 +1830,7 @@ export default function DashboardClient({
                   <input
                     type="number"
                     required
+                    data-testid="input-product-stock"
                     value={productStock}
                     onChange={(e) => setProductStock(e.target.value)}
                     className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-indigo-600 focus:outline-none"
@@ -1844,6 +1848,7 @@ export default function DashboardClient({
                 </button>
                 <button
                   type="submit"
+                  data-testid="submit-create-product-btn"
                   className="rounded-full bg-indigo-600 px-5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700"
                 >
                   Guardar producto

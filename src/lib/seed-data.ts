@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import type { OrderStatus } from "./analytics-utils";
+import { primeAnalyticsCache } from "./analytics-cache";
 
 const CUSTOMERS = [
   { name: "Elena Rostova", email: "elena.rostova@omnimarket.io" },
@@ -100,10 +101,16 @@ export async function seedInitialData(forceReset = false) {
   const ordersData = buildDeterministicOrders(60);
   const productsData = buildDeterministicProducts(15);
 
-  await prisma.order.deleteMany();
-  await prisma.product.deleteMany();
-  await prisma.order.createMany({ data: ordersData, skipDuplicates: true });
-  await prisma.product.createMany({ data: productsData, skipDuplicates: true });
+  await Promise.all([
+    prisma.order.deleteMany(),
+    prisma.product.deleteMany(),
+  ]);
+  await Promise.all([
+    prisma.order.createMany({ data: ordersData, skipDuplicates: true }),
+    prisma.product.createMany({ data: productsData, skipDuplicates: true }),
+  ]);
+
+  primeAnalyticsCache(ordersData);
 
   return {
     seeded: true,
@@ -120,10 +127,16 @@ export async function resetDeterministicTestData() {
   const ordersData = buildDeterministicOrders(50);
   const productsData = buildDeterministicProducts(10);
 
-  await prisma.order.deleteMany();
-  await prisma.product.deleteMany();
-  await prisma.order.createMany({ data: ordersData, skipDuplicates: true });
-  await prisma.product.createMany({ data: productsData, skipDuplicates: true });
+  await Promise.all([
+    prisma.order.deleteMany(),
+    prisma.product.deleteMany(),
+  ]);
+  await Promise.all([
+    prisma.order.createMany({ data: ordersData, skipDuplicates: true }),
+    prisma.product.createMany({ data: productsData, skipDuplicates: true }),
+  ]);
+
+  primeAnalyticsCache(ordersData);
 
   return {
     ordersCount: ordersData.length,

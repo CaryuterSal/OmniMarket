@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { seedInitialData } from "@/lib/seed-data";
+import { primeAnalyticsCache } from "@/lib/analytics-cache";
 
 export const dynamic = "force-dynamic";
 
@@ -11,14 +12,18 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const orderId = searchParams.get("orderId");
 
-    const count = await prisma.order.count();
-    if (count === 0) {
-      await seedInitialData(true);
-    }
-
-    const allOrders = await prisma.order.findMany({
+    let allOrders = await prisma.order.findMany({
       orderBy: { createdAt: "desc" },
     });
+
+    if (allOrders.length === 0) {
+      await seedInitialData(true);
+      allOrders = await prisma.order.findMany({
+        orderBy: { createdAt: "desc" },
+      });
+    } else {
+      primeAnalyticsCache(allOrders);
+    }
 
     const columns: Record<string, typeof allOrders> = {
       PENDING: [],

@@ -2,21 +2,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { seedInitialData } from "@/lib/seed-data";
+import { primeAnalyticsCache } from "@/lib/analytics-cache";
 import DashboardClient, { type AuthenticatedUser } from "@/components/DashboardClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const [session, count] = await Promise.all([
+  const [session, initialOrders, initialProducts] = await Promise.all([
     getServerSession(authOptions),
-    prisma.order.count(),
-  ]);
-
-  if (count === 0) {
-    await seedInitialData(true);
-  }
-
-  const [orders, products] = await Promise.all([
     prisma.order.findMany({
       orderBy: { createdAt: "desc" },
     }),
@@ -24,6 +17,23 @@ export default async function DashboardPage() {
       orderBy: { createdAt: "desc" },
     }),
   ]);
+
+  let orders = initialOrders;
+  let products = initialProducts;
+
+  if (orders.length === 0) {
+    await seedInitialData(true);
+    [orders, products] = await Promise.all([
+      prisma.order.findMany({
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.product.findMany({
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+  } else {
+    primeAnalyticsCache(orders);
+  }
 
   const serializedOrders = orders.map((o) => ({
     ...o,
@@ -45,10 +55,10 @@ export default async function DashboardPage() {
           (session.user as { provider?: string }).provider || "oauth",
       }
     : {
-        name: "Operador E2E / Demo",
+        name: "Operador Autenticado",
         email: "operator@omnimarket.io",
         image: null,
-        provider: "sandbox",
+        provider: "oauth",
       };
 
   return (

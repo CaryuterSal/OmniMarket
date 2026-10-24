@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("OmniMarket - Operations Hub E2E Suite", () => {
-  // Flujo 1: Autenticación y Rutas Protegidas
-  test("Flujo 1 (Autenticación): redirige a /login sin sesión y permite acceso a /dashboard con cookie de sesión", async ({
+  // Flujo 1: Autenticación OAuth 2.0 Exclusiva y Rutas Protegidas
+  test("Flujo 1 (Autenticación): redirige a /login con botones exclusivos OAuth 2.0 sin sesión y permite acceso autenticado a /dashboard", async ({
     page,
     context,
   }) => {
@@ -12,8 +12,9 @@ test.describe("OmniMarket - Operations Hub E2E Suite", () => {
     await expect(page).toHaveURL(/\/login/);
     await expect(page.getByTestId("oauth-google-btn")).toBeVisible();
     await expect(page.getByTestId("oauth-github-btn")).toBeVisible();
+    await expect(page.getByTestId("demo-bypass-login-btn")).toHaveCount(0);
 
-    // Inyectar cookie de sesión simulada E2E
+    // Inyectar cookie de sesión para entorno de pruebas E2E
     await context.addCookies([
       {
         name: "x-e2e-test-auth",
@@ -30,8 +31,8 @@ test.describe("OmniMarket - Operations Hub E2E Suite", () => {
     ).toBeVisible();
   });
 
-  // Flujo 2: Creación de Pedido + Toast + Reflejo en Tabla
-  test("Flujo 2 (Creación): resetea datos, crea un nuevo pedido en /dashboard, verifica Toast y presencia en la tabla", async ({
+  // Flujo 2: Creación de Nuevo Pedido y Nuevo Producto + Toast + Reflejo en Tablas
+  test("Flujo 2 (Creación): registra nuevo pedido y nuevo producto en /dashboard, verifica Toasts y reflejo inmediato en las tablas", async ({
     page,
     context,
     request,
@@ -50,7 +51,7 @@ test.describe("OmniMarket - Operations Hub E2E Suite", () => {
 
     await page.goto("/dashboard");
 
-    // Abrir modal de Nuevo Pedido
+    // 1. Crear nuevo pedido y verificar reflejo en orders-table
     await page.getByTestId("open-create-order-btn").click();
     await expect(page.getByTestId("create-order-modal")).toBeVisible();
 
@@ -65,15 +66,37 @@ test.describe("OmniMarket - Operations Hub E2E Suite", () => {
 
     await page.getByTestId("submit-create-order-btn").click();
 
-    // Verificar Toast de confirmación (sonner)
     await expect(
       page.getByText(/Pedido creado exitosamente/i)
     ).toBeVisible();
 
-    // Comprobar que el nuevo pedido aparece en la tabla
     const ordersTable = page.getByTestId("orders-table");
     await expect(ordersTable).toContainText(uniqueCustomer);
     await expect(ordersTable).toContainText("e2e.hackathon@omnimarket.io");
+
+    // 2. Crear nuevo producto y verificar reflejo en products-table
+    await page.getByTestId("open-create-product-btn").click();
+    await expect(page.getByTestId("create-product-modal")).toBeVisible();
+
+    const uniqueProductName = "Monitor OLED Hackathon E2E";
+    const uniqueSku = "OMNI-E2E-999";
+
+    await page.getByTestId("input-product-name").fill(uniqueProductName);
+    await page.getByTestId("input-product-sku").fill(uniqueSku);
+    await page.getByTestId("input-product-category").fill("Monitors");
+    await page.getByTestId("input-product-price").fill("899.99");
+    await page.getByTestId("input-product-cost").fill("520.00");
+    await page.getByTestId("input-product-stock").fill("30");
+
+    await page.getByTestId("submit-create-product-btn").click();
+
+    await expect(
+      page.getByText(/agregado al catálogo/i)
+    ).toBeVisible();
+
+    const productsTable = page.getByTestId("products-table");
+    await expect(productsTable).toContainText(uniqueProductName);
+    await expect(productsTable).toContainText(uniqueSku);
   });
 
   // Flujo 3: Drag & Drop en Kanban con Persistencia Optimista y Verificación API
@@ -99,16 +122,12 @@ test.describe("OmniMarket - Operations Hub E2E Suite", () => {
     const pendingColumn = page.getByTestId("column-PENDING");
     const shippedColumn = page.getByTestId("column-SHIPPED");
 
-    // Verificar que #order-1 inicia en la columna PENDING
     await expect(pendingColumn.locator("#order-1")).toBeVisible();
 
-    // Arrastrar #order-1 hacia la columna SHIPPED
     await page.dragAndDrop("#order-1", '[data-testid="column-SHIPPED"]');
 
-    // Verificar que #order-1 cambió a la columna SHIPPED en el DOM inmediatamente
     await expect(shippedColumn.locator("#order-1")).toBeVisible();
 
-    // Consultar endpoint de auditoría para confirmar persistencia en BD
     await expect
       .poll(
         async () => {
