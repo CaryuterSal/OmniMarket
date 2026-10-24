@@ -550,12 +550,16 @@ export default function DashboardClient({
       <aside className="hidden h-full w-64 shrink-0 flex-col justify-between border-r border-slate-200/80 bg-white p-4 lg:flex">
         <div className="space-y-6">
           {/* Brand Identity */}
-          <div className="flex items-center gap-3 px-3 py-2">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
-              <Store className="h-5 w-5" />
+          <div className="space-y-2 px-1 py-1">
+            <div className="flex w-full items-center justify-center overflow-hidden rounded-2xl bg-[#0d182a] px-4 py-2.5 shadow-sm">
+              <img
+                src="/logo-full.jpg"
+                alt="OmniMarket"
+                className="h-8 w-auto object-contain"
+              />
             </div>
-            <div className="min-w-0">
-              <h1 className="truncate text-sm font-bold tracking-tight text-slate-900">
+            <div className="px-2">
+              <h1 className="truncate text-xs font-bold tracking-tight text-slate-900">
                 OmniMarket — Operations Hub
               </h1>
               <span className="block text-[11px] text-slate-500">
@@ -701,9 +705,11 @@ export default function DashboardClient({
             {/* Row 1: Title + Action Buttons */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2.5">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm lg:hidden">
-                  <Store className="h-4 w-4" />
-                </div>
+                <img
+                  src="/logo-icon.jpg"
+                  alt="OmniMarket"
+                  className="h-8 w-8 shrink-0 rounded-xl bg-[#0d182a] object-cover shadow-sm lg:hidden"
+                />
                 <div className="min-w-0">
                   <h2 className="truncate text-sm font-bold text-slate-900 sm:text-base">
                     {VIEW_METADATA[activeView].title}

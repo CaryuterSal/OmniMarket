@@ -2,15 +2,19 @@
 
 import React from "react";
 import { signIn } from "next-auth/react";
-import { Store, Github, Chrome, ShieldCheck } from "lucide-react";
+import { Github, Chrome, ShieldCheck } from "lucide-react";
 
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#F8FAFC] px-4 text-slate-900">
       <div className="w-full max-w-[420px] rounded-3xl border border-slate-200/90 bg-white p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:p-10">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-md shadow-indigo-600/20">
-            <Store className="h-7 w-7" />
+          <div className="mb-5 flex w-full items-center justify-center overflow-hidden rounded-2xl bg-[#0d182a] px-6 py-4 shadow-md">
+            <img
+              src="/logo-full.jpg"
+              alt="OmniMarket Logo"
+              className="h-14 w-auto object-contain"
+            />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             Bienvenido a OmniMarket

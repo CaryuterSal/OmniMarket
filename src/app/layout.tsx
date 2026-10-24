@@ -3,9 +3,14 @@ import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "OmniMarket — Gestión de Pedidos e Inventario",
+  title: "OmniMarket — Operations Hub",
   description:
     "Plataforma de administración de ventas, envíos e inventario para comercio electrónico.",
+  icons: {
+    icon: "/logo-icon.jpg",
+    shortcut: "/logo-icon.jpg",
+    apple: "/logo-icon.jpg",
+  },
 };
 
 export default function RootLayout({
