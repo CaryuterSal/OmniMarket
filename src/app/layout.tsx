@@ -3,9 +3,9 @@ import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "OmniMarket - Operations Hub | Real-Time E-Commerce Analytics",
+  title: "OmniMarket — Gestión de Pedidos e Inventario",
   description:
-    "Dashboard de Analítica E-Commerce en Tiempo Real con Kanban Drag & Drop Optimista y Gestión de Pedidos.",
+    "Plataforma de administración de ventas, envíos e inventario para comercio electrónico.",
 };
 
 export default function RootLayout({
@@ -14,10 +14,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className="dark">
-      <body className="bg-slate-950 text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
+    <html lang="es">
+      <body className="min-h-screen bg-[#F8FAFC] text-slate-900 antialiased selection:bg-indigo-600 selection:text-white">
         {children}
-        <Toaster richColors position="top-right" closeButton />
+        <Toaster richColors position="bottom-right" closeButton />
       </body>
     </html>
   );
