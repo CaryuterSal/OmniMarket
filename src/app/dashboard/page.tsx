@@ -1,11 +1,17 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { seedInitialData } from "@/lib/seed-data";
-import DashboardClient from "@/components/DashboardClient";
+import DashboardClient, { type AuthenticatedUser } from "@/components/DashboardClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const count = await prisma.order.count();
+  const [session, count] = await Promise.all([
+    getServerSession(authOptions),
+    prisma.order.count(),
+  ]);
+
   if (count === 0) {
     await seedInitialData(true);
   }
@@ -30,10 +36,26 @@ export default async function DashboardPage() {
     createdAt: p.createdAt.toISOString(),
   }));
 
+  const currentUser: AuthenticatedUser = session?.user
+    ? {
+        name: session.user.name || "Usuario Autenticado",
+        email: session.user.email || "sin-email@omnimarket.io",
+        image: session.user.image || null,
+        provider:
+          (session.user as { provider?: string }).provider || "oauth",
+      }
+    : {
+        name: "Operador E2E / Demo",
+        email: "operator@omnimarket.io",
+        image: null,
+        provider: "sandbox",
+      };
+
   return (
     <DashboardClient
       initialOrders={serializedOrders}
       initialProducts={serializedProducts}
+      currentUser={currentUser}
     />
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { signOut } from "next-auth/react";
 import { toast } from "sonner";
 import {
   DollarSign,
@@ -20,6 +21,7 @@ import {
   Clock,
   Truck,
   Sparkles,
+  UserCheck,
 } from "lucide-react";
 import {
   calculateAverageTicket,
@@ -48,9 +50,17 @@ export interface ProductRecord {
   createdAt?: string | Date;
 }
 
+export interface AuthenticatedUser {
+  name: string;
+  email: string;
+  image: string | null;
+  provider?: string;
+}
+
 interface DashboardClientProps {
   initialOrders: OrderRecord[];
   initialProducts: ProductRecord[];
+  currentUser: AuthenticatedUser;
 }
 
 const KANBAN_COLUMNS: {
@@ -88,6 +98,7 @@ const KANBAN_COLUMNS: {
 export default function DashboardClient({
   initialOrders,
   initialProducts,
+  currentUser,
 }: DashboardClientProps) {
   const [orders, setOrders] = useState<OrderRecord[]>(initialOrders);
   const [products, setProducts] = useState<ProductRecord[]>(initialProducts);
@@ -375,12 +386,12 @@ export default function DashboardClient({
     }
   }
 
-  function handleLogout() {
+  async function handleLogout() {
     document.cookie =
       "x-e2e-test-auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     document.cookie =
       "omnimarket-session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    window.location.href = "/login";
+    await signOut({ callbackUrl: "/login" });
   }
 
   if (isResetting) {
@@ -443,6 +454,37 @@ export default function DashboardClient({
               <RotateCcw className="h-3.5 w-3.5" />
               Reset Test Data
             </button>
+
+            {/* Logged-in User Account Pill */}
+            <div
+              data-testid="user-account-info"
+              className="flex items-center gap-2.5 rounded-xl border border-slate-800 bg-slate-900/90 px-3 py-1.5"
+            >
+              {currentUser.image ? (
+                <img
+                  src={currentUser.image}
+                  alt={currentUser.name}
+                  className="h-7 w-7 rounded-full border border-indigo-500/40 object-cover"
+                />
+              ) : (
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600/20 text-indigo-400">
+                  <UserCheck className="h-4 w-4" />
+                </div>
+              )}
+              <div className="leading-tight">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-semibold text-white">
+                    {currentUser.name}
+                  </span>
+                  <span className="rounded bg-indigo-500/20 px-1.5 py-0.5 text-[10px] font-medium uppercase text-indigo-300">
+                    {currentUser.provider || "OAuth"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  {currentUser.email}
+                </p>
+              </div>
+            </div>
 
             <button
               type="button"

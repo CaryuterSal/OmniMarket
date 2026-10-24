@@ -31,6 +31,24 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+  callbacks: {
+    async jwt({ token, account, profile }) {
+      if (account) {
+        token.provider = account.provider;
+      }
+      if (profile && !token.picture && "avatar_url" in profile) {
+        token.picture = profile.avatar_url as string;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        (session.user as { provider?: string }).provider =
+          (token.provider as string) || "oauth";
+      }
+      return session;
+    },
+  },
   pages: {
     signIn: "/login",
   },

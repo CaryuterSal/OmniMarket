@@ -7,7 +7,8 @@ on:
     branches: [main]
 
 env:
-  DATABASE_URL: "file:./dev.db"
+  DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/omnimarket_test?schema=public"
+  DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/omnimarket_test?schema=public"
   NEXTAUTH_SECRET: "ci-omnimarket-secret-key-2026"
   NEXTAUTH_URL: "http://localhost:3000"
   GOOGLE_CLIENT_ID: "ci-mock-google-id"
@@ -19,6 +20,21 @@ jobs:
   quality-and-tests:
     name: Unit Tests, Build & E2E Verification
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: omnimarket_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout repository
