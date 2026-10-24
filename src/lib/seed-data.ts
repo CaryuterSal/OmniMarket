@@ -100,12 +100,10 @@ export async function seedInitialData(forceReset = false) {
   const ordersData = buildDeterministicOrders(60);
   const productsData = buildDeterministicProducts(15);
 
-  await prisma.$transaction([
-    prisma.order.deleteMany(),
-    prisma.product.deleteMany(),
-    prisma.order.createMany({ data: ordersData }),
-    prisma.product.createMany({ data: productsData }),
-  ]);
+  await prisma.order.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.order.createMany({ data: ordersData, skipDuplicates: true });
+  await prisma.product.createMany({ data: productsData, skipDuplicates: true });
 
   return {
     seeded: true,
@@ -122,12 +120,10 @@ export async function resetDeterministicTestData() {
   const ordersData = buildDeterministicOrders(50);
   const productsData = buildDeterministicProducts(10);
 
-  await prisma.$transaction([
-    prisma.order.deleteMany(),
-    prisma.product.deleteMany(),
-    prisma.order.createMany({ data: ordersData }),
-    prisma.product.createMany({ data: productsData }),
-  ]);
+  await prisma.order.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.order.createMany({ data: ordersData, skipDuplicates: true });
+  await prisma.product.createMany({ data: productsData, skipDuplicates: true });
 
   return {
     ordersCount: ordersData.length,

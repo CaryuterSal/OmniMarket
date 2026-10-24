@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { signOut } from "next-auth/react";
 import { toast } from "sonner";
 import {
@@ -117,6 +117,7 @@ export default function DashboardClient({
   >("all");
 
   // Drag & Drop state
+  const mouseDownOrderIdRef = useRef<string | null>(null);
   const [draggedOrderId, setDraggedOrderId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<OrderStatus | null>(
     null
@@ -181,6 +182,7 @@ export default function DashboardClient({
 
   // Move order across columns
   async function handleMoveOrder(orderId: string, targetStatus: OrderStatus) {
+    mouseDownOrderIdRef.current = null;
     setDragOverColumn(null);
     setDraggedOrderId(null);
 
@@ -246,6 +248,27 @@ export default function DashboardClient({
       return;
     }
 
+    const optimisticId = `order-${Date.now()}`;
+    const optimisticOrder: OrderRecord = {
+      id: optimisticId,
+      ...validation.data,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setOrders((prev) => [optimisticOrder, ...prev]);
+    setCustomerName("");
+    setCustomerEmail("");
+    setTotalAmount("299.99");
+    setCostAmount("165.00");
+    setItemsCount("2");
+    setNewOrderStatus("PENDING");
+    setShowOrderModal(false);
+
+    toast.success(
+      `Pedido creado exitosamente para ${optimisticOrder.customerName}`
+    );
+
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
@@ -260,19 +283,11 @@ export default function DashboardClient({
       const json = await res.json();
       const createdOrder: OrderRecord = json.data;
 
-      setOrders((prev) => [createdOrder, ...prev]);
-      setCustomerName("");
-      setCustomerEmail("");
-      setTotalAmount("299.99");
-      setCostAmount("165.00");
-      setItemsCount("2");
-      setNewOrderStatus("PENDING");
-      setShowOrderModal(false);
-
-      toast.success(
-        `Pedido creado exitosamente para ${createdOrder.customerName}`
+      setOrders((prev) =>
+        prev.map((o) => (o.id === optimisticId ? createdOrder : o))
       );
     } catch {
+      setOrders((prev) => prev.filter((o) => o.id !== optimisticId));
       toast.error("No se pudo guardar el pedido. Intenta nuevamente.");
     }
   }
@@ -623,7 +638,7 @@ export default function DashboardClient({
         </header>
 
         {/* Main Workspace Container */}
-        <main className="mx-auto w-full max-w-7xl space-y-8 px-6 py-7">
+        <main className="mx-auto w-full max-w-7xl space-y-6 px-6 py-5">
           {/* 1. Material 3 Metric Summary Cards */}
           <section aria-label="Resumen de ventas">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -752,12 +767,14 @@ export default function DashboardClient({
                     onDrop={(e) => {
                       e.preventDefault();
                       const transferredId =
-                        e.dataTransfer?.getData("text/plain") || draggedOrderId;
+                        mouseDownOrderIdRef.current ||
+                        draggedOrderId ||
+                        e.dataTransfer?.getData("text/plain");
                       if (transferredId) {
                         handleMoveOrder(transferredId, col.status);
                       }
                     }}
-                    className={`flex max-h-[520px] flex-col rounded-2xl border p-3.5 transition ${
+                    className={`flex max-h-[380px] flex-col rounded-2xl border p-3.5 transition ${
                       isDropTarget
                         ? "border-indigo-400 bg-indigo-50/50 ring-2 ring-indigo-500/20"
                         : "border-slate-200/80 bg-slate-100/70"
@@ -791,14 +808,24 @@ export default function DashboardClient({
                             id={domCardId}
                             data-testid={`order-card-${order.id}`}
                             draggable
-                            onDragStart={(e) => {
+                            onMouseDown={() => {
+                              mouseDownOrderIdRef.current = order.id;
                               setDraggedOrderId(order.id);
+                            }}
+                            onDragStart={(e) => {
+                              const activeOrderId =
+                                mouseDownOrderIdRef.current || order.id;
+                              setDraggedOrderId(activeOrderId);
                               if (e.dataTransfer) {
-                                e.dataTransfer.setData("text/plain", order.id);
+                                e.dataTransfer.setData(
+                                  "text/plain",
+                                  activeOrderId
+                                );
                                 e.dataTransfer.effectAllowed = "move";
                               }
                             }}
                             onDragEnd={() => {
+                              mouseDownOrderIdRef.current = null;
                               setDraggedOrderId(null);
                               setDragOverColumn(null);
                             }}
