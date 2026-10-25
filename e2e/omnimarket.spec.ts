@@ -37,7 +37,9 @@ test.describe("OmniMarket - Operations Hub E2E Suite", () => {
     context,
     request,
   }) => {
-    const resetRes = await request.post("/api/test/reset-data");
+    const resetRes = await request.post("/api/test/reset-data", {
+      headers: { Authorization: "Bearer e2e-reset-secret" },
+    });
     expect(resetRes.ok()).toBeTruthy();
 
     await context.addCookies([
@@ -105,7 +107,9 @@ test.describe("OmniMarket - Operations Hub E2E Suite", () => {
     context,
     request,
   }) => {
-    const resetRes = await request.post("/api/test/reset-data");
+    const resetRes = await request.post("/api/test/reset-data", {
+      headers: { Authorization: "Bearer e2e-reset-secret" },
+    });
     expect(resetRes.ok()).toBeTruthy();
 
     await context.addCookies([

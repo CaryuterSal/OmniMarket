@@ -1,9 +1,26 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { resetDeterministicTestData } from "@/lib/seed-data";
 
 export const dynamic = "force-dynamic";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  // Protect this destructive endpoint with a shared secret.
+  // Callers must send: Authorization: Bearer <RESET_SECRET>
+  // If RESET_SECRET is not configured in the environment, the endpoint is
+  // always locked (returns 401) to prevent accidental production data loss.
+  const resetSecret = process.env.RESET_SECRET;
+  const authHeader = request.headers.get("authorization") ?? "";
+  const providedToken = authHeader.startsWith("Bearer ")
+    ? authHeader.slice(7)
+    : "";
+
+  if (!resetSecret || providedToken !== resetSecret) {
+    return NextResponse.json(
+      { ok: false, error: "Unauthorized — valid RESET_SECRET required" },
+      { status: 401 }
+    );
+  }
+
   const startTime = performance.now();
   try {
     const result = await resetDeterministicTestData();
@@ -26,3 +43,4 @@ export async function POST() {
     );
   }
 }
+
