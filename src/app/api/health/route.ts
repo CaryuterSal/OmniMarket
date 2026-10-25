@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getFastAnalyticsPage } from "@/lib/analytics-cache";
 
 export const dynamic = "force-dynamic";
-export const preferredRegion = ["pdx1", "sfo1", "iad1"];
+export const preferredRegion = "sfo1";
 
 const startedAt = Date.now();
 

@@ -5,8 +5,9 @@ import {
   primeAnalyticsCache,
 } from "@/lib/analytics-cache";
 
-// Co-locate the serverless function with the Supabase pooler in us-west-2 (pdx1)
-export const preferredRegion = ["pdx1", "sfo1", "iad1"];
+// Use a single region string ("sfo1") so Vercel Hobby deploys directly in San Francisco
+// (matching your Edge PoP `sfo1` and West Coast Supabase `us-west-2`) instead of falling back to `iad1`.
+export const preferredRegion = "sfo1";
 
 const routeModuleLoadedAt = Date.now();
 
@@ -99,7 +100,10 @@ export async function GET(request: NextRequest) {
             lastDbQueryMs: timings.lastDbRefresh?.dbQueryMs ?? null,
             lastPrismaImportMs: timings.lastDbRefresh?.prismaImportMs ?? null,
           }),
-          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+          "Cache-Control":
+            "public, max-age=60, s-maxage=60, stale-while-revalidate=300",
+          "CDN-Cache-Control":
+            "public, s-maxage=60, stale-while-revalidate=300",
         },
       }
     );
