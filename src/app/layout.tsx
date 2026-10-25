@@ -22,7 +22,13 @@ export default function RootLayout({
     <html lang="es">
       <body className="min-h-screen bg-[#F8FAFC] text-slate-900 antialiased selection:bg-indigo-600 selection:text-white">
         {children}
-        <Toaster richColors position="bottom-right" closeButton />
+        <Toaster
+          richColors
+          position="bottom-right"
+          closeButton
+          expand
+          visibleToasts={5}
+        />
       </body>
     </html>
   );

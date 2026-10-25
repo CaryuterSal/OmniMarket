@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { OrderInputSchema } from "@/lib/analytics-utils";
-import { invalidateAnalyticsCache, primeAnalyticsCache } from "@/lib/analytics-cache";
+import {
+  primeAnalyticsCache,
+  upsertOrderInCache,
+} from "@/lib/analytics-cache";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +53,7 @@ export async function POST(request: NextRequest) {
       data: parsed.data,
     });
 
-    invalidateAnalyticsCache();
+    upsertOrderInCache(created);
 
     return NextResponse.json({ data: created }, { status: 201 });
   } catch (error) {

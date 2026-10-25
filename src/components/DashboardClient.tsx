@@ -274,10 +274,6 @@ export default function DashboardClient({
       )
     );
 
-    toast.success(
-      `Pedido ${orderId} movido a ${STATUS_LABELS[targetStatus] || targetStatus}`
-    );
-
     try {
       const response = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
@@ -288,6 +284,10 @@ export default function DashboardClient({
       if (!response.ok) {
         throw new Error("Error al guardar cambio");
       }
+
+      toast.success(
+        `Pedido ${orderId} movido a ${STATUS_LABELS[targetStatus] || targetStatus}`
+      );
     } catch {
       setOrders((prev) =>
         prev.map((order) =>
@@ -338,13 +338,13 @@ export default function DashboardClient({
     const previousOrders = [...orders];
     setOrders((prev) => prev.filter((o) => o.id !== orderId));
     setDetailOrderId(null);
-    toast.success(`Pedido ${orderId} eliminado`);
 
     try {
       const res = await fetch(`/api/orders/${orderId}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to delete");
+      toast.success(`Pedido ${orderId} eliminado`);
     } catch {
       setOrders(previousOrders);
       toast.error("No se pudo eliminar el pedido");
@@ -469,10 +469,6 @@ export default function DashboardClient({
     );
     setSelectedOrderIds([]);
 
-    toast.success(
-      `${idsToUpdate.length} pedidos actualizados a ${STATUS_LABELS[targetStatus] || targetStatus}`
-    );
-
     try {
       const res = await fetch("/api/orders/bulk", {
         method: "PATCH",
@@ -486,6 +482,10 @@ export default function DashboardClient({
       if (!res.ok) {
         throw new Error("Fallo al actualizar pedidos");
       }
+
+      toast.success(
+        `${idsToUpdate.length} pedidos actualizados a ${STATUS_LABELS[targetStatus] || targetStatus}`
+      );
     } catch {
       setOrders(previousOrders);
       toast.error("No se pudieron actualizar los pedidos seleccionados.");

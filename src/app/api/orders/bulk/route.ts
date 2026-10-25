@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { BulkOrderUpdateSchema } from "@/lib/analytics-utils";
-import { invalidateAnalyticsCache } from "@/lib/analytics-cache";
+import { bulkUpdateOrdersInCache } from "@/lib/analytics-cache";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +32,7 @@ export async function PATCH(request: NextRequest) {
       },
     });
 
-    invalidateAnalyticsCache();
+    bulkUpdateOrdersInCache(orderIds, status);
 
     return NextResponse.json(
       {

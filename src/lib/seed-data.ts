@@ -1,21 +1,6 @@
 import { prisma } from "./prisma";
-import type { OrderStatus } from "./analytics-utils";
+import { buildDeterministicOrders } from "./analytics-utils";
 import { primeAnalyticsCache } from "./analytics-cache";
-
-const CUSTOMERS = [
-  { name: "Elena Rostova", email: "elena.rostova@omnimarket.io" },
-  { name: "Marco Aurelio", email: "marco.aurelio@omnimarket.io" },
-  { name: "Sofía Vergara", email: "sofia.vergara@omnimarket.io" },
-  { name: "Liam O'Connor", email: "liam.oconnor@omnimarket.io" },
-  { name: "Hana Takahashi", email: "hana.takahashi@omnimarket.io" },
-  { name: "Mateo Silva", email: "mateo.silva@omnimarket.io" },
-  { name: "Camila Mendoza", email: "camila.mendoza@omnimarket.io" },
-  { name: "Lucas Sterling", email: "lucas.sterling@omnimarket.io" },
-  { name: "Valeria Ríos", email: "valeria.rios@omnimarket.io" },
-  { name: "David Kim", email: "david.kim@omnimarket.io" },
-  { name: "Isabella Rossi", email: "isabella.rossi@omnimarket.io" },
-  { name: "Sebastián Mora", email: "sebastian.mora@omnimarket.io" },
-];
 
 const REALISTIC_PRODUCTS = [
   { name: "Monitor UltraWide 34\" Pro", sku: "OMNI-MON-001", price: 699.99, cost: 420.0, stock: 34, category: "Monitors" },
@@ -34,43 +19,6 @@ const REALISTIC_PRODUCTS = [
   { name: "Fuente de Poder UPS 1500VA", sku: "OMNI-UPS-014", price: 259.99, cost: 155.0, stock: 40, category: "Power" },
   { name: "Escritorio Elevable Dual Motor", sku: "OMNI-DSK-015", price: 589.0, cost: 340.0, stock: 15, category: "Furniture" },
 ];
-
-const STATUSES: OrderStatus[] = [
-  "PENDING",
-  "PROCESSING",
-  "SHIPPED",
-  "DELIVERED",
-];
-
-function buildDeterministicOrders(count: number) {
-  const now = Date.now();
-  const orders = [];
-
-  for (let i = 1; i <= count; i++) {
-    const customer = CUSTOMERS[(i - 1) % CUSTOMERS.length];
-    const status: OrderStatus =
-      i <= 3 ? "PENDING" : STATUSES[(i - 1) % STATUSES.length];
-    const itemsCount = ((i * 2) % 5) + 1;
-    const totalAmount = Number((120 + i * 18.5).toFixed(2));
-    const costAmount = Number((totalAmount * 0.62).toFixed(2));
-    // Ensure order-1, order-2, order-3 are the newest orders so they appear first when sorted DESC
-    const createdAt = new Date(now - i * 60 * 1000);
-
-    orders.push({
-      id: `order-${i}`,
-      customerName: customer.name,
-      customerEmail: customer.email,
-      totalAmount,
-      costAmount,
-      status,
-      itemsCount,
-      createdAt,
-      updatedAt: createdAt,
-    });
-  }
-
-  return orders;
-}
 
 function buildDeterministicProducts(count: number) {
   const now = Date.now();

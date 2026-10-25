@@ -21,6 +21,61 @@ export interface OrderRecord {
   updatedAt?: Date | string;
 }
 
+const DETERMINISTIC_CUSTOMERS = [
+  { name: "Elena Rostova", email: "elena.rostova@omnimarket.io" },
+  { name: "Marco Aurelio", email: "marco.aurelio@omnimarket.io" },
+  { name: "Sofía Vergara", email: "sofia.vergara@omnimarket.io" },
+  { name: "Liam O'Connor", email: "liam.oconnor@omnimarket.io" },
+  { name: "Hana Takahashi", email: "hana.takahashi@omnimarket.io" },
+  { name: "Mateo Silva", email: "mateo.silva@omnimarket.io" },
+  { name: "Camila Mendoza", email: "camila.mendoza@omnimarket.io" },
+  { name: "Lucas Sterling", email: "lucas.sterling@omnimarket.io" },
+  { name: "Valeria Ríos", email: "valeria.rios@omnimarket.io" },
+  { name: "David Kim", email: "david.kim@omnimarket.io" },
+  { name: "Isabella Rossi", email: "isabella.rossi@omnimarket.io" },
+  { name: "Sebastián Mora", email: "sebastian.mora@omnimarket.io" },
+];
+
+const DETERMINISTIC_STATUSES: OrderStatus[] = [
+  "PENDING",
+  "PROCESSING",
+  "SHIPPED",
+  "DELIVERED",
+];
+
+export function buildDeterministicOrders(count: number) {
+  const now = Date.now();
+  const orders = [];
+
+  for (let i = 1; i <= count; i++) {
+    const customer =
+      DETERMINISTIC_CUSTOMERS[(i - 1) % DETERMINISTIC_CUSTOMERS.length];
+    const status: OrderStatus =
+      i <= 3
+        ? "PENDING"
+        : DETERMINISTIC_STATUSES[(i - 1) % DETERMINISTIC_STATUSES.length];
+    const itemsCount = ((i * 2) % 5) + 1;
+    const totalAmount = Number((120 + i * 18.5).toFixed(2));
+    const costAmount = Number((totalAmount * 0.62).toFixed(2));
+    // Ensure order-1, order-2, order-3 are the newest orders so they appear first when sorted DESC
+    const createdAt = new Date(now - i * 60 * 1000);
+
+    orders.push({
+      id: `order-${i}`,
+      customerName: customer.name,
+      customerEmail: customer.email,
+      totalAmount,
+      costAmount,
+      status,
+      itemsCount,
+      createdAt,
+      updatedAt: createdAt,
+    });
+  }
+
+  return orders;
+}
+
 export const OrderInputSchema = z.object({
   customerName: z.string().min(2, "El nombre del cliente es obligatorio"),
   customerEmail: z.string().email("Correo electrónico inválido"),

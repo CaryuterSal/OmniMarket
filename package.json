@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "test:unit": "vitest run",
+    "test:latency": "vitest run src/lib/__tests__/analytics-latency.test.ts",
     "test:e2e": "playwright test",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts"
