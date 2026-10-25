@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { seedInitialData } from "@/lib/seed-data";
 import { buildDeterministicOrders } from "@/lib/analytics-utils";
 import {
   getFastAnalyticsPage,
@@ -9,10 +8,15 @@ import {
 // Co-locate the serverless function with the Supabase pooler in us-west-2 (pdx1)
 export const preferredRegion = ["pdx1", "sfo1", "iad1"];
 
+const routeModuleLoadedAt = Date.now();
+
 export async function GET(request: NextRequest) {
   const startTime = performance.now();
+  const requestReceivedAt = Date.now();
+  const msSinceModuleLoad = requestReceivedAt - routeModuleLoadedAt;
 
   try {
+    const tParse = performance.now();
     const { searchParams } = new URL(request.url);
     const pageParam = parseInt(searchParams.get("page") || "1", 10);
     const limitParam = parseInt(searchParams.get("limit") || "50", 10);
@@ -22,21 +26,49 @@ export async function GET(request: NextRequest) {
       Number.isNaN(limitParam) || limitParam < 1
         ? 50
         : Math.min(limitParam, 200);
+    const parseParamsMs = Number((performance.now() - tParse).toFixed(2));
 
     let result = await getFastAnalyticsPage(page, limit);
 
     if (result.total === 0) {
-      // Prime in-memory cache immediately and seed the DB asynchronously
-      // so the response never exceeds 300ms even on an empty database.
       primeAnalyticsCache(buildDeterministicOrders(60));
-      void seedInitialData(true).catch(() => {
-        // Ignore background seed errors
-      });
+      void import("@/lib/seed-data")
+        .then(({ seedInitialData }) => seedInitialData(true))
+        .catch(() => {
+          // Ignore background seed errors
+        });
       result = await getFastAnalyticsPage(page, limit);
     }
 
     const totalPages = Math.max(1, Math.ceil(result.total / limit));
     const latencyMs = Number((performance.now() - startTime).toFixed(2));
+
+    const timings = {
+      ...result.timings,
+      parseParamsMs,
+      totalHandlerMs: latencyMs,
+      msSinceModuleLoad,
+      region: process.env.VERCEL_REGION || "local",
+    };
+
+    // Structured log for Vercel Runtime Logs
+    console.log(
+      JSON.stringify({
+        tag: "ANALYTICS_REQUEST_TRACE",
+        page,
+        limit,
+        cacheStatus: result.fromCache ? "HIT" : "MISS",
+        ...timings,
+      })
+    );
+
+    const serverTimingHeader = [
+      `cache_check;dur=${timings.cacheCheckMs}`,
+      `db_wait;dur=${timings.dbWaitMs};desc="${timings.source}"`,
+      `compute;dur=${timings.computeMs}`,
+      `slice;dur=${timings.sliceMs}`,
+      `total;dur=${latencyMs};desc="region=${timings.region}"`,
+    ].join(", ");
 
     return NextResponse.json(
       {
@@ -47,6 +79,7 @@ export async function GET(request: NextRequest) {
           total: result.total,
           totalPages,
           latencyMs,
+          timings,
         },
         metrics: result.metrics,
       },
@@ -55,6 +88,17 @@ export async function GET(request: NextRequest) {
         headers: {
           "X-Response-Time": `${latencyMs}ms`,
           "X-Cache-Status": result.fromCache ? "HIT" : "MISS",
+          "Server-Timing": serverTimingHeader,
+          "X-Analytics-Timings": JSON.stringify({
+            source: timings.source,
+            isColdStart: timings.isColdStart,
+            region: timings.region,
+            dbWaitMs: timings.dbWaitMs,
+            computeMs: timings.computeMs,
+            totalHandlerMs: timings.totalHandlerMs,
+            lastDbQueryMs: timings.lastDbRefresh?.dbQueryMs ?? null,
+            lastPrismaImportMs: timings.lastDbRefresh?.prismaImportMs ?? null,
+          }),
           "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
         },
       }
