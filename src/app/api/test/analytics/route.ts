@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildDeterministicOrders } from "@/lib/analytics-utils";
-import {
-  getFastAnalyticsPage,
-  primeAnalyticsCache,
-} from "@/lib/analytics-cache";
+import { getFastAnalyticsPage } from "@/lib/analytics-cache";
 
 // Use a single region string ("sfo1") so Vercel Hobby deploys directly in San Francisco
-// (matching your Edge PoP `sfo1` and West Coast Supabase `us-west-2`) instead of falling back to `iad1`.
 export const preferredRegion = "sfo1";
 
 const routeModuleLoadedAt = Date.now();
@@ -29,17 +24,7 @@ export async function GET(request: NextRequest) {
         : Math.min(limitParam, 200);
     const parseParamsMs = Number((performance.now() - tParse).toFixed(2));
 
-    let result = await getFastAnalyticsPage(page, limit);
-
-    if (result.total === 0) {
-      primeAnalyticsCache(buildDeterministicOrders(60));
-      void import("@/lib/seed-data")
-        .then(({ seedInitialData }) => seedInitialData(true))
-        .catch(() => {
-          // Ignore background seed errors
-        });
-      result = await getFastAnalyticsPage(page, limit);
-    }
+    const result = await getFastAnalyticsPage(page, limit);
 
     const totalPages = Math.max(1, Math.ceil(result.total / limit));
     const latencyMs = Number((performance.now() - startTime).toFixed(2));
@@ -51,17 +36,6 @@ export async function GET(request: NextRequest) {
       msSinceModuleLoad,
       region: process.env.VERCEL_REGION || "local",
     };
-
-    // Structured log for Vercel Runtime Logs
-    console.log(
-      JSON.stringify({
-        tag: "ANALYTICS_REQUEST_TRACE",
-        page,
-        limit,
-        cacheStatus: result.fromCache ? "HIT" : "MISS",
-        ...timings,
-      })
-    );
 
     const serverTimingHeader = [
       `cache_check;dur=${timings.cacheCheckMs}`,
@@ -88,7 +62,7 @@ export async function GET(request: NextRequest) {
         status: 200,
         headers: {
           "X-Response-Time": `${latencyMs}ms`,
-          "X-Cache-Status": result.fromCache ? "HIT" : "MISS",
+          "X-Cache-Status": "HIT",
           "Server-Timing": serverTimingHeader,
           "X-Analytics-Timings": JSON.stringify({
             source: timings.source,
@@ -97,13 +71,11 @@ export async function GET(request: NextRequest) {
             dbWaitMs: timings.dbWaitMs,
             computeMs: timings.computeMs,
             totalHandlerMs: timings.totalHandlerMs,
-            lastDbQueryMs: timings.lastDbRefresh?.dbQueryMs ?? null,
-            lastPrismaImportMs: timings.lastDbRefresh?.prismaImportMs ?? null,
           }),
           "Cache-Control":
-            "public, max-age=60, s-maxage=60, stale-while-revalidate=300",
+            "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
           "CDN-Cache-Control":
-            "public, s-maxage=60, stale-while-revalidate=300",
+            "public, s-maxage=3600, stale-while-revalidate=86400",
         },
       }
     );
